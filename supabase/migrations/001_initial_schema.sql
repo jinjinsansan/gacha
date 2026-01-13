@@ -113,6 +113,11 @@ create policy "Users update own profile"
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
+drop policy if exists "Users insert self" on public.users;
+create policy "Users insert self"
+  on public.users for insert
+  with check (auth.uid() = id);
+
 drop policy if exists "Service role manages users" on public.users;
 create policy "Service role manages users"
   on public.users for all
@@ -182,3 +187,8 @@ create policy "Service role manages admins"
   on public.admin_users for all
   using (auth.role() = 'service_role')
   with check (auth.role() = 'service_role');
+
+drop policy if exists "Admins view own membership" on public.admin_users;
+create policy "Admins view own membership"
+  on public.admin_users for select
+  using (auth.uid() = user_id);
