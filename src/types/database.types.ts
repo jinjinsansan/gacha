@@ -71,6 +71,7 @@ export interface Database {
         Row: {
           amount: string;
           created_at: string;
+          gacha_history_id: string | null;
           id: string;
           status: string;
           tx_hash: string | null;
@@ -81,6 +82,7 @@ export interface Database {
         Insert: {
           amount: string;
           created_at?: string;
+          gacha_history_id?: string | null;
           id?: string;
           status?: string;
           tx_hash?: string | null;
@@ -91,6 +93,7 @@ export interface Database {
         Update: {
           amount?: string;
           created_at?: string;
+          gacha_history_id?: string | null;
           id?: string;
           status?: string;
           tx_hash?: string | null;

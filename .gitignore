@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 *.zip
+tmp_video_bundle/
 
 # debug
 npm-debug.log*

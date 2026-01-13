@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DepositQR } from "@/components/DepositQR";
@@ -15,6 +16,7 @@ type Phase = "deposit" | "waiting" | "ready";
 const PLAY_COST = 1;
 
 export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortalProps) {
+  const router = useRouter();
   const [balance, setBalance] = useState(initialBalance);
   const [phase, setPhase] = useState<Phase>(initialBalance >= PLAY_COST ? "ready" : "deposit");
   const [isPolling, setIsPolling] = useState(false);
@@ -196,9 +198,7 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
             <button
               type="button"
               disabled={phase !== "ready"}
-              onClick={() => {
-                window.location.href = "/play/start";
-              }}
+              onClick={() => router.push("/play/start")}
               className="inline-flex flex-1 items-center justify-center rounded-full bg-accent-primary px-5 py-3 text-sm font-semibold text-black shadow-glow transition hover:bg-[#00d670] disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/60"
             >
               Start Gacha

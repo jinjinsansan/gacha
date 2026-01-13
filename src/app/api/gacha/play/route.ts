@@ -65,8 +65,19 @@ export async function POST() {
       prize_amount: prizeAmount,
     };
 
-    const [historyResult, balanceResult, jackpotResult, playTxResult, winTxResult] = await Promise.all([
-      adminClient.from("gacha_history").insert(historyPayload).select("id").single(),
+    const historyResult = await adminClient
+      .from("gacha_history")
+      .insert(historyPayload)
+      .select("id")
+      .single();
+
+    if (historyResult.error || !historyResult.data?.id) {
+      throw new Error(historyResult.error?.message ?? "Failed to record gacha history");
+    }
+
+    const playId = historyResult.data.id as string;
+
+    const [balanceResult, jackpotResult, playTxResult, winTxResult] = await Promise.all([
       supabase.from("users").update({ balance: newBalance }).eq("id", user.id),
       adminClient
         .from("system_settings")
@@ -77,6 +88,7 @@ export async function POST() {
         type: "PLAY",
         amount: PLAY_COST,
         status: "CONFIRMED",
+        gacha_history_id: playId,
       }),
       finalResult
         ? adminClient.from("transactions").insert({
@@ -84,28 +96,25 @@ export async function POST() {
             type: "WIN",
             amount: prizeAmount,
             status: "PENDING",
+            gacha_history_id: playId,
           })
         : Promise.resolve({ error: null }),
     ]);
 
     if (
-      historyResult.error ||
       balanceResult.error ||
       jackpotResult.error ||
       playTxResult.error ||
       (finalResult && winTxResult && "error" in winTxResult && winTxResult.error)
     ) {
       throw new Error(
-        historyResult.error?.message ||
-          balanceResult.error?.message ||
+        balanceResult.error?.message ||
           jackpotResult.error?.message ||
           playTxResult.error?.message ||
           (winTxResult as { error?: { message: string } }).error?.message ||
           "Failed to record play"
       );
     }
-
-    const playId = historyResult.data?.id;
 
     return NextResponse.json({
       playId,
