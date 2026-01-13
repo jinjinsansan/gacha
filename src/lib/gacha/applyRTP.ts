@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 import type { Database } from "@/types";
+import { pickWeightedPattern } from "./patternWeight";
 
 type Pattern = Database["public"]["Tables"]["gacha_patterns"]["Row"];
 
@@ -29,6 +30,10 @@ export function applyRTP(
 
   const loseVariants = currencyPatterns.filter((pattern) => pattern.base_result === false);
   if (loseVariants.length > 0) {
+    const weighted = pickWeightedPattern(loseVariants, secureRandomInt);
+    if (weighted) {
+      return { pattern: weighted, finalResult: false };
+    }
     return { pattern: loseVariants[secureRandomInt(loseVariants.length)], finalResult: false };
   }
 

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 import type { Database } from "@/types";
+import { pickWeightedPattern } from "./patternWeight";
 
 type Pattern = Database["public"]["Tables"]["gacha_patterns"]["Row"];
 
@@ -36,6 +37,11 @@ export function selectPattern(patterns: Pattern[]): Pattern {
 
   if (candidates.length === 0) {
     return patterns[secureRandomInt(patterns.length)];
+  }
+
+  const weighted = pickWeightedPattern(candidates, secureRandomInt);
+  if (weighted) {
+    return weighted;
   }
 
   return candidates[secureRandomInt(candidates.length)];

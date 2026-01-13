@@ -44,6 +44,7 @@ export interface Database {
           id: number;
           machine_color: string;
           prize_amount: string;
+          weight: number;
           video_url: string;
         };
         Insert: {
@@ -54,6 +55,7 @@ export interface Database {
           id: number;
           machine_color: string;
           prize_amount: string;
+          weight?: number;
           video_url: string;
         };
         Update: {
@@ -64,6 +66,7 @@ export interface Database {
           id?: number;
           machine_color?: string;
           prize_amount?: string;
+          weight?: number;
           video_url?: string;
         };
       };
