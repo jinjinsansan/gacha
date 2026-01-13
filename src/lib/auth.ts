@@ -6,7 +6,17 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const getSiteUrl = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export const signInWithGoogle = async (redirectPath: string = "/play") => {
+type SignInInput = string | FormData | undefined;
+
+export const signInWithGoogle = async (input?: SignInInput) => {
+  let redirectPath = "/play";
+
+  if (input instanceof FormData) {
+    redirectPath = input.get("redirectPath")?.toString() ?? "/play";
+  } else if (typeof input === "string") {
+    redirectPath = input;
+  }
+
   const supabase = createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
