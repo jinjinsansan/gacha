@@ -8,7 +8,8 @@ type Params = {
   };
 };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(_request: Request, context: Params) {
+  const { params } = context;
   const supabase = createSupabaseServerClient();
   const {
     data: { user },
