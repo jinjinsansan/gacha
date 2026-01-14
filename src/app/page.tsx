@@ -88,6 +88,12 @@ export default async function Home() {
             >
               View Probability Table
             </Link>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center rounded-full border border-dashed border-white/20 px-10 py-4 text-base font-semibold text-white/80 transition hover:border-white"
+            >
+              Try Demo (No Login)
+            </Link>
           </div>
 
           <div className="mt-8 grid gap-4 text-sm text-white/65 sm:grid-cols-3">
