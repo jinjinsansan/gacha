@@ -12,8 +12,10 @@ const currencyWeights: Record<DemoPattern["currency"], number> = {
 const totalCurrencyWeight = Object.values(currencyWeights).reduce((sum, weight) => sum + weight, 0);
 
 const RTP_PERCENT = 90;
-const WIN_VIDEO_URL = "/demo/win.mp4";
-const LOSE_VIDEO_URL = "/demo/lose.mp4";
+const FALLBACK_VIDEO = {
+  win: "/demo/win.mp4",
+  lose: "/demo/lose.mp4",
+};
 
 const randomInt = (max: number) => Math.floor(Math.random() * max);
 
@@ -73,12 +75,19 @@ const applyRTP = (pattern: DemoPattern) => {
   return { pattern, finalResult: false };
 };
 
+const resolveVideoUrl = (pattern: DemoPattern, finalResult: boolean) => {
+  if (pattern.video_url) {
+    return pattern.video_url;
+  }
+  return finalResult ? FALLBACK_VIDEO.win : FALLBACK_VIDEO.lose;
+};
+
 export async function GET() {
   try {
     const selectedPattern = pickPattern();
     const { pattern, finalResult } = applyRTP(selectedPattern);
     const prizeAmount = finalResult ? pattern.prize_amount : 0;
-    const videoUrl = finalResult ? WIN_VIDEO_URL : LOSE_VIDEO_URL;
+    const videoUrl = resolveVideoUrl(pattern, finalResult);
 
     return NextResponse.json({
       id: pattern.id,
