@@ -14,6 +14,7 @@ type PlayPortalProps = {
 type Phase = "deposit" | "waiting" | "ready";
 
 const PLAY_COST = 1;
+const DEMO_MODE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true";
 
 export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortalProps) {
   const router = useRouter();
@@ -26,6 +27,8 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
   const [codeInput, setCodeInput] = useState("");
   const [codeStatus, setCodeStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [codeMessage, setCodeMessage] = useState<string | null>(null);
+  const [demoStatus, setDemoStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
+  const [demoMessage, setDemoMessage] = useState<string | null>(null);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -113,6 +116,31 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
     },
     [codeInput]
   );
+
+  const handleAddDemoCredits = useCallback(async () => {
+    setDemoStatus("pending");
+    setDemoMessage(null);
+
+    try {
+      const response = await fetch("/api/user/demo-credit", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to add demo credits");
+      }
+
+      const updatedBalance = Number(data.balance ?? balance);
+      setBalance(updatedBalance);
+      if (updatedBalance >= PLAY_COST) {
+        setPhase("ready");
+      }
+      setDemoStatus("success");
+      setDemoMessage(`Demo plays added (+${data.added ?? "??"}).`);
+    } catch (error) {
+      console.error("Demo credit error", error);
+      setDemoStatus("error");
+      setDemoMessage(error instanceof Error ? error.message : "Could not add demo credits.");
+    }
+  }, [balance]);
 
   const statusCopy = {
     deposit: {
@@ -204,6 +232,28 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
               Start Gacha
             </button>
           </div>
+          {DEMO_MODE_ENABLED && (
+            <div className="mt-3 space-y-2 rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 text-sm text-white/70">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handleAddDemoCredits}
+                  disabled={demoStatus === "pending"}
+                  className="inline-flex flex-1 items-center justify-center rounded-full border border-accent-primary/40 px-4 py-2 text-sm font-semibold text-accent-primary transition hover:border-accent-primary hover:text-black hover:bg-accent-primary/80 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/40"
+                >
+                  {demoStatus === "pending" ? "Adding demo plays..." : "Add demo plays"}
+                </button>
+                <p className="flex-1 text-xs text-white/60">
+                  Demoモード: 入金なしでテストできます。
+                </p>
+              </div>
+              {demoMessage && (
+                <p className={`text-xs ${demoStatus === "error" ? "text-accent-jackpot" : "text-accent-primary"}`}>
+                  {demoMessage}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
