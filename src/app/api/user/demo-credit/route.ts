@@ -3,8 +3,22 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const DEMO_MODE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true";
-const DEMO_CREDIT_AMOUNT = Number(process.env.NEXT_PUBLIC_DEMO_CREDIT_AMOUNT ?? 5);
+const parseBooleanEnv = (value?: string | null) => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on";
+};
+
+const resolveDemoModeEnabled = () =>
+  parseBooleanEnv(process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE ?? process.env.ENABLE_DEMO_MODE);
+
+const resolveDemoCreditAmount = () => {
+  const raw = Number(process.env.NEXT_PUBLIC_DEMO_CREDIT_AMOUNT ?? process.env.DEMO_CREDIT_AMOUNT ?? 5);
+  return Number.isFinite(raw) && raw > 0 ? raw : 5;
+};
+
+const DEMO_MODE_ENABLED = resolveDemoModeEnabled();
+const DEMO_CREDIT_AMOUNT = resolveDemoCreditAmount();
 
 export async function POST() {
   if (!DEMO_MODE_ENABLED) {
@@ -33,7 +47,7 @@ export async function POST() {
 
   const profile = profileData as { balance: string };
   const currentBalance = Number(profile.balance ?? 0) || 0;
-  const addedAmount = DEMO_CREDIT_AMOUNT > 0 ? DEMO_CREDIT_AMOUNT : 5;
+  const addedAmount = DEMO_CREDIT_AMOUNT;
   const newBalance = currentBalance + addedAmount;
 
   const { error: updateError } = await supabase

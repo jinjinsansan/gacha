@@ -9,14 +9,21 @@ type PlayPortalProps = {
   depositAddress: string;
   initialBalance: number;
   email?: string;
+  demoModeEnabled?: boolean;
+  demoCreditAmount?: number;
 };
 
 type Phase = "deposit" | "waiting" | "ready";
 
 const PLAY_COST = 1;
-const DEMO_MODE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE === "true";
 
-export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortalProps) {
+export function PlayPortal({
+  depositAddress,
+  initialBalance,
+  email,
+  demoModeEnabled = false,
+  demoCreditAmount = 5,
+}: PlayPortalProps) {
   const router = useRouter();
   const [balance, setBalance] = useState(initialBalance);
   const [phase, setPhase] = useState<Phase>(initialBalance >= PLAY_COST ? "ready" : "deposit");
@@ -118,6 +125,7 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
   );
 
   const handleAddDemoCredits = useCallback(async () => {
+    if (!demoModeEnabled) return;
     setDemoStatus("pending");
     setDemoMessage(null);
 
@@ -133,14 +141,15 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
       if (updatedBalance >= PLAY_COST) {
         setPhase("ready");
       }
+      const added = data.added ?? demoCreditAmount;
       setDemoStatus("success");
-      setDemoMessage(`Demo plays added (+${data.added ?? "??"}).`);
+      setDemoMessage(`Demo plays added (+${added}).`);
     } catch (error) {
       console.error("Demo credit error", error);
       setDemoStatus("error");
       setDemoMessage(error instanceof Error ? error.message : "Could not add demo credits.");
     }
-  }, [balance]);
+  }, [balance, demoModeEnabled, demoCreditAmount]);
 
   const statusCopy = {
     deposit: {
@@ -232,7 +241,7 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
               Start Gacha
             </button>
           </div>
-          {DEMO_MODE_ENABLED && (
+          {demoModeEnabled && (
             <div className="mt-3 space-y-2 rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 text-sm text-white/70">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
@@ -244,7 +253,7 @@ export function PlayPortal({ depositAddress, initialBalance, email }: PlayPortal
                   {demoStatus === "pending" ? "Adding demo plays..." : "Add demo plays"}
                 </button>
                 <p className="flex-1 text-xs text-white/60">
-                  Demoモード: 入金なしでテストできます。
+                  Demoモード: 入金なしでテストできます（1クリックで +{demoCreditAmount} クレジット）。
                 </p>
               </div>
               {demoMessage && (
