@@ -16,6 +16,14 @@ type PlayPortalProps = {
 type Phase = "deposit" | "waiting" | "ready";
 
 const PLAY_COST = 1;
+const parseBooleanEnv = (value?: string) => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on";
+};
+const envDemoModeEnabled = parseBooleanEnv(process.env.NEXT_PUBLIC_ENABLE_DEMO_MODE);
+const envDemoCreditAmountRaw = Number(process.env.NEXT_PUBLIC_DEMO_CREDIT_AMOUNT ?? 5);
+const envDemoCreditAmount = Number.isFinite(envDemoCreditAmountRaw) && envDemoCreditAmountRaw > 0 ? envDemoCreditAmountRaw : 5;
 
 export function PlayPortal({
   depositAddress,
@@ -24,6 +32,8 @@ export function PlayPortal({
   demoModeEnabled = false,
   demoCreditAmount = 5,
 }: PlayPortalProps) {
+  const resolvedDemoModeEnabled = demoModeEnabled || envDemoModeEnabled;
+  const resolvedDemoCreditAmount = demoCreditAmount || envDemoCreditAmount;
   const router = useRouter();
   const [balance, setBalance] = useState(initialBalance);
   const [phase, setPhase] = useState<Phase>(initialBalance >= PLAY_COST ? "ready" : "deposit");
@@ -125,7 +135,7 @@ export function PlayPortal({
   );
 
   const handleAddDemoCredits = useCallback(async () => {
-    if (!demoModeEnabled) return;
+    if (!resolvedDemoModeEnabled) return;
     setDemoStatus("pending");
     setDemoMessage(null);
 
@@ -141,7 +151,7 @@ export function PlayPortal({
       if (updatedBalance >= PLAY_COST) {
         setPhase("ready");
       }
-      const added = data.added ?? demoCreditAmount;
+      const added = data.added ?? resolvedDemoCreditAmount;
       setDemoStatus("success");
       setDemoMessage(`Demo plays added (+${added}).`);
     } catch (error) {
@@ -149,7 +159,7 @@ export function PlayPortal({
       setDemoStatus("error");
       setDemoMessage(error instanceof Error ? error.message : "Could not add demo credits.");
     }
-  }, [balance, demoModeEnabled, demoCreditAmount]);
+  }, [balance, resolvedDemoModeEnabled, resolvedDemoCreditAmount]);
 
   const statusCopy = {
     deposit: {
@@ -241,7 +251,7 @@ export function PlayPortal({
               Start Gacha
             </button>
           </div>
-          {demoModeEnabled && (
+          {resolvedDemoModeEnabled && (
             <div className="mt-3 space-y-2 rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 text-sm text-white/70">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
@@ -253,7 +263,7 @@ export function PlayPortal({
                   {demoStatus === "pending" ? "Adding demo plays..." : "Add demo plays"}
                 </button>
                 <p className="flex-1 text-xs text-white/60">
-                  Demoモード: 入金なしでテストできます（1クリックで +{demoCreditAmount} クレジット）。
+                  Demoモード: 入金なしでテストできます（1クリックで +{resolvedDemoCreditAmount} クレジット）。
                 </p>
               </div>
               {demoMessage && (
