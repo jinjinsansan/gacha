@@ -80,7 +80,7 @@ export function DemoPlayClient() {
   const showVideo = playData && (state === "playing" || state === "complete");
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-8 shadow-[0_0_60px_rgba(0,0,0,0.45)]">
+    <div className="rounded-[40px] border border-white/10 bg-gradient-to-br from-[#0a0a12] via-[#05030a] to-[#010104] p-8 shadow-[0_20px_80px_rgba(0,0,0,0.65)]">
       <p className="text-xs uppercase tracking-[0.5em] text-white/60">Demo Chamber</p>
       <h2 className="mt-3 text-3xl font-black text-white">Try the reel without login</h2>
       <p className="mt-2 text-white/70">
@@ -92,9 +92,17 @@ export function DemoPlayClient() {
 
       <div className="mt-8">
         {showVideo ? (
-          <div className="rounded-[32px] border border-white/15 bg-black/60 p-4">
-            <div className="aspect-video overflow-hidden rounded-2xl bg-black">
-              <GachaVideo src={playData.pattern.videoUrl} onEnded={handleVideoEnded} />
+          <div className="relative overflow-hidden rounded-[36px] border border-white/15 bg-gradient-to-br from-[#050208] to-[#000] p-6">
+            <div className="absolute inset-x-10 top-4 flex justify-between text-[0.55rem] uppercase tracking-[0.6em] text-white/30">
+              <span>Left spindle</span>
+              <span>Right spindle</span>
+            </div>
+            <div className="mt-8 overflow-hidden rounded-[28px] border border-white/10 bg-black">
+              <div className="relative">
+                <div className="absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-black/70 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-black/80 to-transparent" />
+                <GachaVideo src={playData.pattern.videoUrl} onEnded={handleVideoEnded} className="h-full w-full object-cover" />
+              </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-white/70">
               <span>

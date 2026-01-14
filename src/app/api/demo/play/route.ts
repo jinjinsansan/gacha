@@ -12,8 +12,8 @@ const currencyWeights: Record<DemoPattern["currency"], number> = {
 const totalCurrencyWeight = Object.values(currencyWeights).reduce((sum, weight) => sum + weight, 0);
 
 const RTP_PERCENT = 90;
-const WIN_VIDEO_URL = "https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4";
-const LOSE_VIDEO_URL = "https://storage.googleapis.com/coverr-main/mp4/Nature_Curve.mp4";
+const WIN_VIDEO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+const LOSE_VIDEO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/paint.mp4";
 
 const randomInt = (max: number) => Math.floor(Math.random() * max);
 
