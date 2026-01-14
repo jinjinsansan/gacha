@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { GachaVideo } from "@/components/GachaVideo";
 
@@ -32,6 +32,27 @@ export function DemoPlayClient() {
   const [state, setState] = useState<State>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [playData, setPlayData] = useState<DemoPlayResponse | null>(null);
+
+  const statusCards = useMemo(
+    () => [
+      {
+        title: "Pattern scan",
+        body: "Picking a reel based on BTC/ETH/XRP/TRX ratios.",
+        active: state === "loading" || state === "playing" || state === "complete",
+      },
+      {
+        title: "RTP governor",
+        body: `Calibrated to ${playData?.rtp ?? 90}% for this spin.`,
+        active: state === "playing" || state === "complete",
+      },
+      {
+        title: "Neon verdict",
+        body: playData ? (playData.finalResult ? "WIN dispatched." : "LOSE recorded.") : "Awaiting result.",
+        active: state === "complete",
+      },
+    ],
+    [state, playData]
+  );
 
   const startDemoPlay = useCallback(async () => {
     try {
@@ -86,11 +107,15 @@ export function DemoPlayClient() {
                 RTP: <strong>{playData.rtp}%</strong>
               </span>
             </div>
-            {state === "complete" && (
-              <p className="mt-4 text-base font-semibold text-white">
-                {playData.finalResult ? "WIN!" : "LOSE"} — {playData.finalResult ? "Congratulations." : "Try again."}
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-[0.4em] text-white/50">Result</p>
+              <p className={`mt-2 text-2xl font-semibold ${playData.finalResult ? "text-accent-win" : "text-accent-jackpot"}`}>
+                {playData.finalResult ? "WIN" : "LOSE"}
               </p>
-            )}
+              <p className="text-sm text-white/60">
+                {playData.pattern.machineColor} machine · {playData.pattern.effect1} → {playData.pattern.effect2}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-white/20 bg-black/40 px-8 py-16 text-center">
@@ -119,6 +144,18 @@ export function DemoPlayClient() {
             Play Again
           </button>
         )}
+      </div>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
+        {statusCards.map((card) => (
+          <div
+            key={card.title}
+            className={`rounded-2xl border p-4 text-sm transition ${card.active ? "border-accent-primary bg-accent-primary/10 text-white" : "border-white/15 bg-white/5 text-white/60"}`}
+          >
+            <p className="text-xs uppercase tracking-[0.4em]">{card.title}</p>
+            <p className="mt-2 text-white/80">{card.body}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

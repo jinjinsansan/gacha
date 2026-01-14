@@ -12,6 +12,8 @@ const currencyWeights: Record<DemoPattern["currency"], number> = {
 const totalCurrencyWeight = Object.values(currencyWeights).reduce((sum, weight) => sum + weight, 0);
 
 const RTP_PERCENT = 90;
+const WIN_VIDEO_URL = "https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4";
+const LOSE_VIDEO_URL = "https://storage.googleapis.com/coverr-main/mp4/Nature_Curve.mp4";
 
 const randomInt = (max: number) => Math.floor(Math.random() * max);
 
@@ -76,6 +78,7 @@ export async function GET() {
     const selectedPattern = pickPattern();
     const { pattern, finalResult } = applyRTP(selectedPattern);
     const prizeAmount = finalResult ? pattern.prize_amount : 0;
+    const videoUrl = finalResult ? WIN_VIDEO_URL : LOSE_VIDEO_URL;
 
     return NextResponse.json({
       id: pattern.id,
@@ -88,7 +91,7 @@ export async function GET() {
         machineColor: pattern.machine_color,
         effect1: pattern.effect_1,
         effect2: pattern.effect_2,
-        videoUrl: pattern.video_url,
+        videoUrl,
       },
     });
   } catch (error) {
