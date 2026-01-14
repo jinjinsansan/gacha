@@ -34,6 +34,7 @@ export function PlayPortal({
 }: PlayPortalProps) {
   const resolvedDemoModeEnabled = demoModeEnabled || envDemoModeEnabled;
   const resolvedDemoCreditAmount = demoCreditAmount || envDemoCreditAmount;
+  const [forcedDemoMode, setForcedDemoMode] = useState(false);
   const router = useRouter();
   const [balance, setBalance] = useState(initialBalance);
   const [phase, setPhase] = useState<Phase>(initialBalance >= PLAY_COST ? "ready" : "deposit");
@@ -134,8 +135,25 @@ export function PlayPortal({
     [codeInput]
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get("demo");
+    if (!flag) {
+      return;
+    }
+    const normalized = flag.trim().toLowerCase();
+    if (["1", "true", "on", "yes"].includes(normalized)) {
+      setForcedDemoMode(true);
+    }
+  }, []);
+
+  const demoEnabled = resolvedDemoModeEnabled || forcedDemoMode;
+
   const handleAddDemoCredits = useCallback(async () => {
-    if (!resolvedDemoModeEnabled) return;
+    if (!demoEnabled) return;
     setDemoStatus("pending");
     setDemoMessage(null);
 
@@ -159,7 +177,7 @@ export function PlayPortal({
       setDemoStatus("error");
       setDemoMessage(error instanceof Error ? error.message : "Could not add demo credits.");
     }
-  }, [balance, resolvedDemoModeEnabled, resolvedDemoCreditAmount]);
+  }, [balance, demoEnabled, resolvedDemoCreditAmount]);
 
   const statusCopy = {
     deposit: {
@@ -251,7 +269,7 @@ export function PlayPortal({
               Start Gacha
             </button>
           </div>
-          {resolvedDemoModeEnabled && (
+          {demoEnabled && (
             <div className="mt-3 space-y-2 rounded-2xl border border-dashed border-white/20 bg-white/5 p-4 text-sm text-white/70">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
