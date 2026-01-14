@@ -17,10 +17,18 @@ export async function middleware(req: NextRequest) {
           return req.cookies.get(name)?.value;
         },
         set(name: string, value: string, options?: Record<string, unknown>) {
-          res.cookies.set({ name, value, ...options });
+          if (options) {
+            res.cookies.set({ name, value, ...options });
+          } else {
+            res.cookies.set(name, value);
+          }
         },
         remove(name: string, options?: Record<string, unknown>) {
-          res.cookies.set({ name, value: "", ...options, maxAge: 0 });
+          if (options) {
+            res.cookies.set({ name, value: "", ...options, maxAge: 0 });
+          } else {
+            res.cookies.set(name, "", { maxAge: 0 });
+          }
         },
       },
     }

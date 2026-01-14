@@ -14,18 +14,18 @@ const getSupabaseServerConfig = () => {
   return { supabaseUrl, supabaseAnonKey } as const;
 };
 
-export const createSupabaseServerClient = () => {
+export const createSupabaseServerClient = async () => {
   const { supabaseUrl, supabaseAnonKey } = getSupabaseServerConfig();
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
+          cookieStore.set(name, value, options as never);
         });
       },
     },

@@ -8,7 +8,7 @@ type Params = Promise<{
 
 export async function GET(_request: NextRequest, context: { params: Params }) {
   const params = await context.params;
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest, context: { params: Params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { data: rawData, error } = await supabase
     .from("gacha_history")
     .select(
       `
@@ -42,6 +42,7 @@ export async function GET(_request: NextRequest, context: { params: Params }) {
     .eq("id", params.id)
     .maybeSingle();
 
+  const data = rawData as { user_id: string; [key: string]: unknown } | null;
   if (error || !data) {
     return NextResponse.json({ error: "Result not found" }, { status: 404 });
   }

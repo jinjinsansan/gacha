@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 export async function GET() {
   try {
     const supabase = getSupabaseAdminClient();
-    const { data, error } = await supabase
+    const { data: rawData, error } = await supabase
       .from("system_settings")
       .select("value")
       .eq("key", "jackpot_pool")
@@ -15,6 +15,7 @@ export async function GET() {
       throw error;
     }
 
+    const data = rawData as { value: string } | null;
     const amount = Number(data?.value ?? 0);
 
     return NextResponse.json({ amount: Number.isFinite(amount) ? amount : 0 });

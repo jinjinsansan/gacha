@@ -23,12 +23,13 @@ const SPEC_URL =
 async function getJackpotAmount() {
   try {
     const supabase = getSupabaseAdminClient();
-    const { data } = await supabase
+    const { data: rawData } = await supabase
       .from("system_settings")
       .select("value")
       .eq("key", "jackpot_pool")
       .maybeSingle();
 
+    const data = rawData as { value: string } | null;
     const parsed = Number(data?.value ?? 0);
     return Number.isFinite(parsed) ? parsed : 0;
   } catch (error) {
@@ -38,7 +39,7 @@ async function getJackpotAmount() {
 }
 
 export default async function Home() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const [
     {
       data: { user },

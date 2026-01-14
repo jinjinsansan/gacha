@@ -4,11 +4,16 @@ import { applyRTP } from "@/lib/gacha/applyRTP";
 import { selectPattern } from "@/lib/gacha/selectPattern";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/types";
 
 const PLAY_COST = 1;
 
+type GachaPattern = Database["public"]["Tables"]["gacha_patterns"]["Row"];
+type SystemSetting = Database["public"]["Tables"]["system_settings"]["Row"];
+type GachaHistoryInsert = Database["public"]["Tables"]["gacha_history"]["Insert"];
+
 export async function POST() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const adminClient = getSupabaseAdminClient();
 
   const {
@@ -20,35 +25,41 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from("users")
     .select("balance")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profileError || profile?.balance == null) {
+  if (profileError || !profileData) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  const currentBalance = Number(profile.balance) || 0;
+  const profile = profileData as { balance: string };
+  const currentBalance = Number(profile.balance ?? 0) || 0;
   if (currentBalance < PLAY_COST) {
     return NextResponse.json({ error: "Insufficient balance" }, { status: 402 });
   }
 
   try {
-    const [{ data: patterns, error: patternError }, { data: rtpSetting }, { data: jackpotSetting }] =
+    const [patternsResult, rtpResult, jackpotResult] =
       await Promise.all([
         adminClient.from("gacha_patterns").select("*"),
         adminClient.from("system_settings").select("value").eq("key", "current_rtp").maybeSingle(),
         adminClient.from("system_settings").select("value").eq("key", "jackpot_pool").maybeSingle(),
       ]);
 
-    if (patternError || !patterns?.length) {
+    const { data: patternsData, error: patternError } = patternsResult;
+    if (patternError || !patternsData?.length) {
       throw new Error(patternError?.message ?? "Missing gacha patterns");
     }
 
+    const patterns = patternsData as GachaPattern[];
     const selectedPattern = selectPattern(patterns);
     const currencyPatterns = patterns.filter((pattern) => pattern.currency === selectedPattern.currency);
+    
+    const rtpSetting = rtpResult.data as SystemSetting | null;
+    const jackpotSetting = jackpotResult.data as SystemSetting | null;
     const currentRTP = Number(rtpSetting?.value ?? 90) || 90;
     const { pattern: finalPattern, finalResult } = applyRTP(selectedPattern, currencyPatterns, currentRTP);
 
@@ -57,31 +68,32 @@ export async function POST() {
     const jackpotPool = Number(jackpotSetting?.value ?? 0) || 0;
     const newJackpotValue = jackpotPool + 1;
 
-    const historyPayload = {
+    const historyPayload: GachaHistoryInsert = {
       user_id: user.id,
       pattern_id: finalPattern.id,
       final_result: finalResult,
       rtp_at_play: Math.round(currentRTP),
-      prize_amount: prizeAmount,
+      prize_amount: prizeAmount.toString(),
     };
 
     const historyResult = await adminClient
       .from("gacha_history")
-      .insert(historyPayload)
+      .insert(historyPayload as never)
       .select("id")
       .single();
 
-    if (historyResult.error || !historyResult.data?.id) {
+    const historyData = historyResult.data as { id: string } | null;
+    if (historyResult.error || !historyData?.id) {
       throw new Error(historyResult.error?.message ?? "Failed to record gacha history");
     }
 
-    const playId = historyResult.data.id as string;
+    const playId = historyData.id;
 
-    const [balanceResult, jackpotResult, playTxResult, winTxResult] = await Promise.all([
-      supabase.from("users").update({ balance: newBalance }).eq("id", user.id),
+    const [balanceResult, jackpotUpdateResult, playTxResult, winTxResult] = await Promise.all([
+      supabase.from("users").update({ balance: newBalance } as never).eq("id", user.id),
       adminClient
         .from("system_settings")
-        .update({ value: newJackpotValue.toString() })
+        .update({ value: newJackpotValue.toString() } as never)
         .eq("key", "jackpot_pool"),
       adminClient.from("transactions").insert({
         user_id: user.id,
@@ -89,7 +101,7 @@ export async function POST() {
         amount: PLAY_COST,
         status: "CONFIRMED",
         gacha_history_id: playId,
-      }),
+      } as never),
       finalResult
         ? adminClient.from("transactions").insert({
             user_id: user.id,
@@ -97,19 +109,19 @@ export async function POST() {
             amount: prizeAmount,
             status: "PENDING",
             gacha_history_id: playId,
-          })
+          } as never)
         : Promise.resolve({ error: null }),
     ]);
 
     if (
       balanceResult.error ||
-      jackpotResult.error ||
+      jackpotUpdateResult.error ||
       playTxResult.error ||
       (finalResult && winTxResult && "error" in winTxResult && winTxResult.error)
     ) {
       throw new Error(
         balanceResult.error?.message ||
-          jackpotResult.error?.message ||
+          jackpotUpdateResult.error?.message ||
           playTxResult.error?.message ||
           (winTxResult as { error?: { message: string } }).error?.message ||
           "Failed to record play"

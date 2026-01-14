@@ -7,7 +7,7 @@ type RedeemPayload = {
 };
 
 export async function POST(request: Request) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -23,11 +23,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Campaign code is required" }, { status: 400 });
   }
 
-  const { data: campaign, error: codeError } = await supabase
+  const { data: rawCampaign, error: codeError } = await supabase
     .from("campaign_codes")
     .select("id, plays_granted, max_uses, current_uses, expires_at, is_active")
     .eq("code", code)
     .maybeSingle();
+
+  const campaign = rawCampaign as {
+    id: string;
+    plays_granted: number;
+    max_uses: number;
+    current_uses: number;
+    expires_at: string | null;
+    is_active: boolean;
+  } | null;
 
   if (codeError || !campaign) {
     return NextResponse.json({ error: "Code not found" }, { status: 404 });
@@ -55,12 +64,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Code already redeemed" }, { status: 400 });
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: rawProfile, error: profileError } = await supabase
     .from("users")
     .select("balance")
     .eq("id", user.id)
     .maybeSingle();
 
+  const profile = rawProfile as { balance: string } | null;
   if (profileError || profile?.balance == null) {
     return NextResponse.json({ error: "User profile missing" }, { status: 400 });
   }
@@ -69,12 +79,12 @@ export async function POST(request: Request) {
   const updatedBalance = currentBalance + campaign.plays_granted;
 
   const [redeemResult, codeUpdateResult, balanceResult] = await Promise.all([
-    supabase.from("code_redemptions").insert({ user_id: user.id, code_id: campaign.id }),
+    supabase.from("code_redemptions").insert({ user_id: user.id, code_id: campaign.id } as never),
     supabase
       .from("campaign_codes")
-      .update({ current_uses: campaign.current_uses + 1 })
+      .update({ current_uses: campaign.current_uses + 1 } as never)
       .eq("id", campaign.id),
-    supabase.from("users").update({ balance: updatedBalance }).eq("id", user.id),
+    supabase.from("users").update({ balance: updatedBalance } as never).eq("id", user.id),
   ]);
 
   if (redeemResult.error || codeUpdateResult.error || balanceResult.error) {

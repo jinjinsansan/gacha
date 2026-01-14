@@ -9,7 +9,7 @@ type WithdrawPayload = {
 };
 
 export async function POST(request: Request) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const adminClient = getSupabaseAdminClient();
 
   const {
@@ -28,11 +28,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "walletAddress and playId are required" }, { status: 400 });
   }
 
-  const { data: play, error: playError } = await adminClient
+  const { data: rawPlay, error: playError } = await adminClient
     .from("gacha_history")
     .select("id, user_id, final_result, prize_amount")
     .eq("id", playId)
     .maybeSingle();
+
+  const play = rawPlay as {
+    id: string;
+    user_id: string;
+    final_result: boolean;
+    prize_amount: string;
+  } | null;
 
   if (playError || !play) {
     return NextResponse.json({ error: "Play not found" }, { status: 404 });
@@ -66,7 +73,7 @@ export async function POST(request: Request) {
     status: "PENDING",
     wallet_address: walletAddress,
     gacha_history_id: playId,
-  });
+  } as never);
 
   if (insertError) {
     console.error("Failed to create withdrawal", insertError);

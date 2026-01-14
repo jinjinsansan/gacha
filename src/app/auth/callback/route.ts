@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(requestUrl);
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
@@ -56,7 +56,7 @@ async function ensureUserProfile(user: User) {
     id: user.id,
     email: user.email ?? "unknown",
     deposit_address: generatePlaceholderDepositAddress(user.id),
-  });
+  } as never);
 }
 
 function generatePlaceholderDepositAddress(userId: string) {

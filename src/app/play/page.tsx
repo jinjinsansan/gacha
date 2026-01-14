@@ -5,7 +5,7 @@ import { PlayPortal } from "./PlayPortal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function PlayPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -14,12 +14,13 @@ export default async function PlayPage() {
     redirect("/");
   }
 
-  const { data: profile, error } = await supabase
+  const { data: rawProfile, error } = await supabase
     .from("users")
     .select("deposit_address, balance")
     .eq("id", user!.id)
     .maybeSingle();
 
+  const profile = rawProfile as { deposit_address: string; balance: string } | null;
   if (error || !profile?.deposit_address) {
     throw new Error("User profile is missing a deposit address.");
   }

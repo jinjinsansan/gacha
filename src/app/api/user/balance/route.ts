@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -12,12 +12,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { data: rawData, error } = await supabase
     .from("users")
     .select("balance")
     .eq("id", user.id)
     .maybeSingle();
 
+  const data = rawData as { balance: string } | null;
   if (error || data?.balance == null) {
     return NextResponse.json({ error: "Balance not found" }, { status: 404 });
   }

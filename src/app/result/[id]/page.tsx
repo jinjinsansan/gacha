@@ -12,7 +12,7 @@ type ResultPageProps = {
 };
 
 export default async function ResultPage({ params }: ResultPageProps) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -21,7 +21,7 @@ export default async function ResultPage({ params }: ResultPageProps) {
     redirect("/");
   }
 
-  const { data, error } = await supabase
+  const { data: rawData, error } = await supabase
     .from("gacha_history")
     .select(
       `
@@ -45,6 +45,25 @@ export default async function ResultPage({ params }: ResultPageProps) {
     .eq("id", params.id)
     .maybeSingle();
 
+  type ResultData = {
+    id: string;
+    user_id: string;
+    final_result: boolean;
+    rtp_at_play: number;
+    prize_amount: string;
+    played_at: string;
+    pattern: {
+      id: number;
+      currency: string;
+      machine_color: string;
+      effect_1: string;
+      effect_2: string;
+      video_url: string;
+      prize_amount: string;
+    };
+  };
+
+  const data = rawData as ResultData | null;
   if (error || !data || data.user_id !== user.id) {
     redirect("/");
   }

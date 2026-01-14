@@ -5,7 +5,7 @@ import { PlayStartClient } from "./PlayStartClient";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function PlayStartPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

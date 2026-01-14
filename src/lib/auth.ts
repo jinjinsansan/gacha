@@ -17,7 +17,7 @@ export const signInWithGoogle = async (input?: SignInInput) => {
     redirectPath = input;
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -36,7 +36,7 @@ export const signInWithGoogle = async (input?: SignInInput) => {
 };
 
 export const signOut = async () => {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/");
 };

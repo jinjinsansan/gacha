@@ -19,7 +19,7 @@ const getSupabaseBrowserConfig = () => {
 export const getSupabaseBrowserClient = () => {
   if (!browserClient) {
     const { supabaseUrl, supabaseAnonKey } = getSupabaseBrowserConfig();
-    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey) as unknown as SupabaseClient<Database>;
   }
 
   return browserClient;
